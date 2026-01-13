@@ -23,4 +23,8 @@ public class JoueurRequestDTO {
     @NotBlank(message = "Email obligatoire")
     @Email(message = "Format email invalide")
     private String email;
+
+    @Schema(description = "Mot de passe du joueur", example = "SecurePass123!", required = true)
+    @NotBlank(message = "Mot de passe obligatoire")
+    private String password;
 }

@@ -17,6 +17,7 @@ public class Joueur {
     private Long id;
     private String pseudo;
     private String email;
+    private String password;
     private double soldeReel;
     private double soldeBonus;
     private boolean kycValide;

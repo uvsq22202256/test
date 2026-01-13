@@ -19,12 +19,15 @@ public class CreateJoueurUseCase {
         this.createPortefeuilleUseCase = createPortefeuilleUseCase;
     }
 
-    public Joueur execute(String pseudo, String email) {
+    public Joueur execute(String pseudo, String email, String password) {
         if (pseudo == null || pseudo.trim().isEmpty()) {
             throw new IllegalArgumentException("Pseudo obligatoire");
         }
         if (email == null || email.trim().isEmpty()) {
             throw new IllegalArgumentException("Email obligatoire");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mot de passe obligatoire");
         }
         if (!email.contains("@")) {
             throw new IllegalArgumentException("Email invalide");
@@ -37,6 +40,7 @@ public class CreateJoueurUseCase {
         Joueur joueur = Joueur.builder()
                 .pseudo(pseudo.trim())
                 .email(email.trim())
+                .password(password.trim())
                 .soldeReel(0.0)
                 .soldeBonus(0.0)
                 .kycValide(false)

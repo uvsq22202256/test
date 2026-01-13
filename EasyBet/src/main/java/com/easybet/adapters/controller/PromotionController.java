@@ -5,6 +5,8 @@ import com.easybet.usecase.AppliquerPromotionUseCase;
 import com.easybet.usecase.CreerPromotionUsecase;
 import com.easybet.usecase.RecupererPromotionActivesUseCase;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/promotions")
-@Tag(name = "Promotions", description = "API de gestion des bonus")
+@Tag(name = "Promotions", description = "API de gestion des promotions et codes promo")
 public class PromotionController {
 
     private final CreerPromotionUsecase creerPromotionUsecase;
@@ -29,7 +31,10 @@ public class PromotionController {
     }
 
     @PostMapping
-    @Operation(summary = "Créer une promotion (Admin)")
+    @Operation(summary = "Créer une promotion (Admin)",
+               description = "Crée une nouvelle promotion avec un code, un montant et une date de fin de validité")
+    @ApiResponse(responseCode = "201", description = "Promotion créée avec succès")
+    @ApiResponse(responseCode = "400", description = "Données invalides")
     public ResponseEntity<Promotion> creerPromotion(@RequestBody PromotionRequest request) {
         Promotion nouvellePromo = new Promotion();
         nouvellePromo.setCode(request.code);
@@ -44,12 +49,24 @@ public class PromotionController {
     }
 
     @GetMapping("/actives")
+    @Operation(summary = "Lister les promotions actives",
+               description = "Retourne la liste de toutes les promotions actuellement valides et non expirées")
+    @ApiResponse(responseCode = "200", description = "Liste des promotions actives récupérée avec succès")
     public ResponseEntity<List<Promotion>> listerPromotionsActives() {
         return ResponseEntity.ok(recupererActivesUseCase.execute());
     }
 
     @PostMapping("/appliquer")
-    public ResponseEntity<String> appliquerPromotion(@RequestParam String code, @RequestParam Long joueurId) {
+    @Operation(summary = "Appliquer une promotion",
+               description = "Applique une promotion à un joueur en utilisant son code promo")
+    @ApiResponse(responseCode = "200", description = "Promotion appliquée avec succès")
+    @ApiResponse(responseCode = "400", description = "Code promo invalide ou expiré")
+    @ApiResponse(responseCode = "404", description = "Joueur non trouvé")
+    public ResponseEntity<String> appliquerPromotion(
+            @Parameter(description = "Code de la promotion", required = true)
+            @RequestParam String code,
+            @Parameter(description = "ID du joueur", required = true)
+            @RequestParam Long joueurId) {
         try {
             appliquerPromotionUseCase.execute(code, joueurId);
             return ResponseEntity.ok("Promotion appliquée avec succès !");

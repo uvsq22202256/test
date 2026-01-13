@@ -5,6 +5,7 @@ import com.easybet.domain.entity.Jeu;
 import com.easybet.domain.repository.JeuRepository;
 import com.easybet.infrastructure.persistence.entity.JeuEntity;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,7 +32,8 @@ public class JpaJeuRepositoryAdapter implements JeuRepository {
 
     @Override
     public Optional<Jeu> findById(String id) {
-        return repository.findById(id).map(e -> new Jeu(e.id, e.nom, e.type, e.tauxRistourne, e.actif));
+        return repository.findById(id)
+                .map(e -> new Jeu(e.id, e.nom, e.type, e.tauxRistourne, e.actif));
     }
 
     @Override
@@ -39,5 +41,17 @@ public class JpaJeuRepositoryAdapter implements JeuRepository {
         return repository.findAll().stream()
                 .map(e -> new Jeu(e.id, e.nom, e.type, e.tauxRistourne, e.actif))
                 .collect(Collectors.toList());
+    }
+
+    // --- IMPLEMENTATION DES AJOUTS ---
+
+    @Override
+    public boolean existsById(String id) {
+        return repository.existsById(id);
+    }
+
+    @Override
+    public void deleteById(String id) {
+        repository.deleteById(id);
     }
 }

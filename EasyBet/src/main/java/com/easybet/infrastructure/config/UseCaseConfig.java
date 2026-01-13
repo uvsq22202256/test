@@ -6,6 +6,10 @@ import com.easybet.domain.repository.PortefeuilleRepository;
 import com.easybet.domain.repository.TransactionRepository;
 import com.easybet.domain.repository.JeuRepository;
 import com.easybet.domain.repository.SessionJeuRepository;
+import com.easybet.domain.repository.LimiteJeuRepository;
+
+import com.easybet.infrastructure.event.JeuEventProducer;
+import com.easybet.infrastructure.event.JeuResponsableEventProducer;
 
 // --- Imports des Events et Kafka ---
 import com.easybet.infrastructure.event.*;
@@ -123,8 +127,8 @@ public class UseCaseConfig {
     // ==========================================
 
     @Bean
-    public CreerJeuUseCase creerJeuUseCase(JeuRepository jeuRepository) {
-        return new CreerJeuUseCase(jeuRepository);
+    public CreerJeuUseCase creerJeuUseCase(JeuRepository jeuRepository, JeuEventProducer eventProducer) {
+        return new CreerJeuUseCase(jeuRepository, eventProducer);
     }
 
     @Bean
@@ -133,17 +137,51 @@ public class UseCaseConfig {
     }
 
     @Bean
+    public SupprimerJeuUseCase supprimerJeuUseCase(JeuRepository jeuRepository, JeuEventProducer eventProducer) {
+        return new SupprimerJeuUseCase(jeuRepository, eventProducer);
+    }
+
+    @Bean
     public DemarrerSessionUseCase demarrerSessionUseCase(SessionJeuRepository sessionRepository,
                                                          JeuRepository jeuRepository,
                                                          PortefeuilleRepository portefeuilleRepository,
-                                                         EffectuerRetraitUseCase retraitUseCase) {
-        return new DemarrerSessionUseCase(sessionRepository, jeuRepository, portefeuilleRepository, retraitUseCase);
+                                                         EffectuerRetraitUseCase retraitUseCase,
+                                                         JeuEventProducer eventProducer) {
+        return new DemarrerSessionUseCase(sessionRepository, jeuRepository, portefeuilleRepository, retraitUseCase, eventProducer);
     }
 
     @Bean
     public TerminerSessionUseCase terminerSessionUseCase(SessionJeuRepository sessionRepository,
                                                          PortefeuilleRepository portefeuilleRepository,
-                                                         EffectuerDepotUseCase depotUseCase) {
-        return new TerminerSessionUseCase(sessionRepository, portefeuilleRepository, depotUseCase);
+                                                         EffectuerDepotUseCase depotUseCase,
+                                                         JeuEventProducer eventProducer) {
+        return new TerminerSessionUseCase(sessionRepository, portefeuilleRepository, depotUseCase, eventProducer);
+    }
+
+    @Bean
+    public ModifierJeuUseCase modifierJeuUseCase(JeuRepository jeuRepository, JeuEventProducer eventProducer) {
+        return new ModifierJeuUseCase(jeuRepository, eventProducer);
+    }
+
+    // --- JEU RESPONSABLE ---
+
+    @Bean
+    public DefinirLimiteDepotUseCase definirLimiteDepotUseCase(LimiteJeuRepository repository, JeuResponsableEventProducer producer) {
+        return new DefinirLimiteDepotUseCase(repository, producer);
+    }
+
+    @Bean
+    public RecupererLimiteJoueurUseCase recupererLimiteJoueurUseCase(LimiteJeuRepository repository) {
+        return new RecupererLimiteJoueurUseCase(repository);
+    }
+
+    @Bean
+    public ModifierLimiteDepotUseCase modifierLimiteDepotUseCase(LimiteJeuRepository repository, JeuResponsableEventProducer producer) {
+        return new ModifierLimiteDepotUseCase(repository, producer);
+    }
+
+    @Bean
+    public SupprimerLimiteDepotUseCase supprimerLimiteDepotUseCase(LimiteJeuRepository repository, JeuResponsableEventProducer producer) {
+        return new SupprimerLimiteDepotUseCase(repository, producer);
     }
 }

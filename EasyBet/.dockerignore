@@ -1,0 +1,43 @@
+# Fichiers et dossiers à ignorer pour Docker
+.git
+.gitignore
+.idea
+*.iml
+*.ipr
+*.iws
+
+# Build et cache
+build/
+.gradle/
+out/
+target/
+
+# Logs
+*.log
+logs/
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.vscode/
+.settings/
+.project
+.classpath
+
+# Fichiers temporaires
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+

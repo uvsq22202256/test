@@ -17,6 +17,18 @@ public class Jeu {
         this.actif = actif;
     }
 
+    public void mettreAJour(String nom, String type, BigDecimal tauxRistourne) {
+        if (nom != null && !nom.isBlank()) {
+            this.nom = nom;
+        }
+        if (type != null && !type.isBlank()) {
+            this.type = type;
+        }
+        if (tauxRistourne != null) {
+            this.tauxRistourne = tauxRistourne;
+        }
+    }
+
     public String getId() { return id; }
     public String getNom() { return nom; }
     public String getType() { return type; }

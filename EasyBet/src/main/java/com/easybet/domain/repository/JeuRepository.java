@@ -8,4 +8,6 @@ public interface JeuRepository {
     Jeu save(Jeu jeu);
     Optional<Jeu> findById(String id);
     List<Jeu> findAll();
+    boolean existsById(String id);
+    void deleteById(String id);
 }

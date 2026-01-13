@@ -76,22 +76,37 @@ public class PortefeuilleController {
     }
 
     @GetMapping
-    @Operation(summary = "Récupérer un portefeuille")
-    public ResponseEntity<PortefeuilleResponseDTO> getPortefeuille(@RequestParam Long joueurId) {
+    @Operation(summary = "Récupérer un portefeuille par joueur",
+               description = "Retourne le portefeuille d'un joueur en utilisant son ID comme paramètre de requête")
+    @ApiResponse(responseCode = "200", description = "Portefeuille trouvé")
+    @ApiResponse(responseCode = "404", description = "Portefeuille non trouvé")
+    public ResponseEntity<PortefeuilleResponseDTO> getPortefeuille(
+            @Parameter(description = "ID du joueur", required = true)
+            @RequestParam Long joueurId) {
         Portefeuille portefeuille = getPortefeuilleUseCase.execute(joueurId);
         return ResponseEntity.ok(PortefeuilleResponseDTO.fromDomain(portefeuille));
     }
 
     @GetMapping("/{portefeuilleId}")
-    @Operation(summary = "Récupérer les détails d'un portefeuille")
-    public ResponseEntity<PortefeuilleResponseDTO> getPortefeuilleById(@PathVariable Long portefeuilleId) {
+    @Operation(summary = "Récupérer les détails d'un portefeuille",
+               description = "Retourne les informations détaillées d'un portefeuille spécifique par son ID")
+    @ApiResponse(responseCode = "200", description = "Portefeuille trouvé")
+    @ApiResponse(responseCode = "404", description = "Portefeuille non trouvé")
+    public ResponseEntity<PortefeuilleResponseDTO> getPortefeuilleById(
+            @Parameter(description = "ID du portefeuille", required = true)
+            @PathVariable Long portefeuilleId) {
         Portefeuille portefeuille = getPortefeuilleUseCase.execute(portefeuilleId);
         return ResponseEntity.ok(PortefeuilleResponseDTO.fromDomain(portefeuille));
     }
 
     @PatchMapping("/{portefeuilleId}")
-    @Operation(summary = "Modifier l'état du portefeuille")
+    @Operation(summary = "Modifier l'état du portefeuille",
+               description = "Permet de bloquer ou débloquer un portefeuille. Statuts possibles : ACTIF, BLOQUE")
+    @ApiResponse(responseCode = "200", description = "Statut du portefeuille modifié avec succès")
+    @ApiResponse(responseCode = "400", description = "Statut invalide")
+    @ApiResponse(responseCode = "404", description = "Portefeuille non trouvé")
     public ResponseEntity<PortefeuilleResponseDTO> modifierEtatPortefeuille(
+            @Parameter(description = "ID du portefeuille", required = true)
             @PathVariable Long portefeuilleId,
             @Valid @RequestBody PortefeuilleStatutRequestDTO request) {
 
@@ -107,8 +122,13 @@ public class PortefeuilleController {
     }
 
     @DeleteMapping("/{portefeuilleId}")
-    @Operation(summary = "Supprimer un portefeuille")
-    public ResponseEntity<Void> supprimerPortefeuille(@PathVariable Long portefeuilleId) {
+    @Operation(summary = "Supprimer un portefeuille",
+               description = "Supprime définitivement un portefeuille du système")
+    @ApiResponse(responseCode = "204", description = "Portefeuille supprimé avec succès")
+    @ApiResponse(responseCode = "404", description = "Portefeuille non trouvé")
+    public ResponseEntity<Void> supprimerPortefeuille(
+            @Parameter(description = "ID du portefeuille à supprimer", required = true)
+            @PathVariable Long portefeuilleId) {
         supprimerPortefeuilleUseCase.execute(portefeuilleId);
         return ResponseEntity.noContent().build();
     }
