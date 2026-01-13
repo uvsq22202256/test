@@ -1,12 +1,19 @@
 package com.easybet.infrastructure.config;
 
+// --- Imports des Repositories ---
 import com.easybet.domain.repository.JoueurRepository;
-import com.easybet.infrastructure.event.JoueurEventProducer;
-import com.easybet.usecase.CreateJoueurUseCase;
-import com.easybet.usecase.CreatePortefeuilleUseCase;
-import com.easybet.usecase.DeleteJoueurUseCase;
-import com.easybet.usecase.GetAllJoueursUseCase;
-import com.easybet.usecase.GetJoueurByIdUseCase;
+import com.easybet.domain.repository.PortefeuilleRepository;
+import com.easybet.domain.repository.TransactionRepository;
+import com.easybet.domain.repository.JeuRepository;
+import com.easybet.domain.repository.SessionJeuRepository;
+
+// --- Imports des Events et Kafka ---
+import com.easybet.infrastructure.event.*;
+import org.springframework.kafka.core.KafkaTemplate;
+
+// --- Imports de TOUS les Use Cases ---
+import com.easybet.usecase.*;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,6 +23,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class UseCaseConfig {
+
+    // ==========================================
+    // 1. GESTION DES JOUEURS (Votre code existant)
+    // ==========================================
 
     @Bean
     public CreateJoueurUseCase createJoueurUseCase(JoueurRepository joueurRepository,
@@ -38,5 +49,101 @@ public class UseCaseConfig {
     public DeleteJoueurUseCase deleteJoueurUseCase(JoueurRepository joueurRepository, JoueurEventProducer eventProducer) {
         return new DeleteJoueurUseCase(joueurRepository, eventProducer);
     }
-}
 
+    // ==========================================
+    // 2. GESTION DES PORTEFEUILLES & TRANSACTIONS (Ajouts)
+    // ==========================================
+
+    @Bean
+    public CreatePortefeuilleUseCase createPortefeuilleUseCase(PortefeuilleRepository portefeuilleRepository) {
+        return new CreatePortefeuilleUseCase(portefeuilleRepository);
+    }
+
+    @Bean
+    public EffectuerDepotUseCase effectuerDepotUseCase(PortefeuilleRepository portefeuilleRepository,
+                                                       TransactionRepository transactionRepository,
+                                                       KafkaTemplate<String, PortefeuilleDepotEffectueEvent> kafkaTemplate) {
+        return new EffectuerDepotUseCase(portefeuilleRepository, transactionRepository, kafkaTemplate);
+    }
+
+    @Bean
+    public EffectuerRetraitUseCase effectuerRetraitUseCase(PortefeuilleRepository portefeuilleRepository,
+                                                           TransactionRepository transactionRepository,
+                                                           KafkaTemplate<String, PortefeuilleRetraitEffectueEvent> kafkaTemplate) {
+        return new EffectuerRetraitUseCase(portefeuilleRepository, transactionRepository, kafkaTemplate);
+    }
+
+    @Bean
+    public GetPortefeuilleUseCase getPortefeuilleUseCase(PortefeuilleRepository portefeuilleRepository) {
+        return new GetPortefeuilleUseCase(portefeuilleRepository);
+    }
+
+    @Bean
+    public GetAllPortefeuillesUseCase getAllPortefeuillesUseCase(PortefeuilleRepository portefeuilleRepository) {
+        return new GetAllPortefeuillesUseCase(portefeuilleRepository);
+    }
+
+    @Bean
+    public TransfertFondsUseCase transfertFondsUseCase(PortefeuilleRepository portefeuilleRepository,
+                                                       TransactionRepository transactionRepository,
+                                                       KafkaTemplate<String, PortefeuilleTransfertEffectueEvent> kafkaTemplate) {
+        return new TransfertFondsUseCase(portefeuilleRepository, transactionRepository, kafkaTemplate);
+    }
+
+    @Bean
+    public BloquerPortefeuilleUseCase bloquerPortefeuilleUseCase(PortefeuilleRepository portefeuilleRepository,
+                                                                 KafkaTemplate<String, PortefeuilleBlockeEvent> kafkaTemplate) {
+        return new BloquerPortefeuilleUseCase(portefeuilleRepository, kafkaTemplate);
+    }
+
+    @Bean
+    public DebloquerPortefeuilleUseCase debloquerPortefeuilleUseCase(PortefeuilleRepository portefeuilleRepository) {
+        return new DebloquerPortefeuilleUseCase(portefeuilleRepository);
+    }
+
+    @Bean
+    public AjouterBonusUseCase ajouterBonusUseCase(PortefeuilleRepository portefeuilleRepository,
+                                                   TransactionRepository transactionRepository,
+                                                   KafkaTemplate<String, PortefeuilleBonusAjouteEvent> kafkaTemplate) {
+        return new AjouterBonusUseCase(portefeuilleRepository, transactionRepository, kafkaTemplate);
+    }
+
+    @Bean
+    public SupprimerPortefeuilleUseCase supprimerPortefeuilleUseCase(PortefeuilleRepository portefeuilleRepository) {
+        return new SupprimerPortefeuilleUseCase(portefeuilleRepository);
+    }
+
+    @Bean
+    public GetHistoriqueTransactionsUseCase getHistoriqueTransactionsUseCase(TransactionRepository transactionRepository) {
+        return new GetHistoriqueTransactionsUseCase(transactionRepository);
+    }
+
+    // ==========================================
+    // 3. GESTION DES JEUX & SESSIONS (Ajouts pour le Casino)
+    // ==========================================
+
+    @Bean
+    public CreerJeuUseCase creerJeuUseCase(JeuRepository jeuRepository) {
+        return new CreerJeuUseCase(jeuRepository);
+    }
+
+    @Bean
+    public ListerJeuxUseCase listerJeuxUseCase(JeuRepository jeuRepository) {
+        return new ListerJeuxUseCase(jeuRepository);
+    }
+
+    @Bean
+    public DemarrerSessionUseCase demarrerSessionUseCase(SessionJeuRepository sessionRepository,
+                                                         JeuRepository jeuRepository,
+                                                         PortefeuilleRepository portefeuilleRepository,
+                                                         EffectuerRetraitUseCase retraitUseCase) {
+        return new DemarrerSessionUseCase(sessionRepository, jeuRepository, portefeuilleRepository, retraitUseCase);
+    }
+
+    @Bean
+    public TerminerSessionUseCase terminerSessionUseCase(SessionJeuRepository sessionRepository,
+                                                         PortefeuilleRepository portefeuilleRepository,
+                                                         EffectuerDepotUseCase depotUseCase) {
+        return new TerminerSessionUseCase(sessionRepository, portefeuilleRepository, depotUseCase);
+    }
+}

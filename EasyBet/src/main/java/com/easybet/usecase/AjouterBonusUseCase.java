@@ -7,13 +7,11 @@ import com.easybet.domain.repository.TransactionRepository;
 import com.easybet.infrastructure.event.PortefeuilleBonusAjouteEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Use Case - Ajouter un bonus à un portefeuille
- */
 @Service
 public class AjouterBonusUseCase {
 
@@ -22,64 +20,66 @@ public class AjouterBonusUseCase {
     private final KafkaTemplate<String, PortefeuilleBonusAjouteEvent> kafkaTemplate;
 
     public AjouterBonusUseCase(PortefeuilleRepository portefeuilleRepository,
-                              TransactionRepository transactionRepository,
-                              KafkaTemplate<String, PortefeuilleBonusAjouteEvent> kafkaTemplate) {
+                               TransactionRepository transactionRepository,
+                               KafkaTemplate<String, PortefeuilleBonusAjouteEvent> kafkaTemplate) {
         this.portefeuilleRepository = portefeuilleRepository;
         this.transactionRepository = transactionRepository;
         this.kafkaTemplate = kafkaTemplate;
     }
 
+    @Transactional
     public Transaction execute(Long joueurId, BigDecimal montant, String typeBonus, String codePromo) {
-        // Valider le montant
         if (montant.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Le montant du bonus doit être supérieur à 0");
+            throw new RuntimeException("Le montant doit être supérieur à 0");
         }
 
-        // Récupérer le portefeuille
         Portefeuille portefeuille = portefeuilleRepository.findByJoueurId(joueurId)
-                .orElseThrow(() -> new RuntimeException("Portefeuille non trouvé pour le joueur : " + joueurId));
+                .orElseThrow(() -> new RuntimeException("Portefeuille non trouvé"));
 
-        // Vérifier le statut
-        if (!"ACTIF".equals(portefeuille.getStatut())) {
-            throw new RuntimeException("Le portefeuille n'est pas actif");
+        // --- LOGIQUE DE SÉPARATION CORRIGÉE ---
+        BigDecimal ancienSolde;
+        BigDecimal nouveauSolde;
+        String categorie;
+
+        // Si c'est un dépôt -> Solde Réel
+        if ("DEPOT".equalsIgnoreCase(typeBonus) || "DEPOT_CLIENT".equalsIgnoreCase(typeBonus)) {
+            ancienSolde = portefeuille.getSoldeReel();
+            nouveauSolde = ancienSolde.add(montant);
+            portefeuille.setSoldeReel(nouveauSolde);
+            categorie = "DEPOT";
+        }
+        // Sinon -> Solde Bonus
+        else {
+            ancienSolde = portefeuille.getSoldeBonus();
+            nouveauSolde = ancienSolde.add(montant);
+            portefeuille.setSoldeBonus(nouveauSolde);
+            categorie = "BONUS";
         }
 
-        // Créer la transaction
-        BigDecimal ancienSolde = portefeuille.getSoldeBonus();
-        BigDecimal nouveauSolde = ancienSolde.add(montant);
-
-        Transaction transaction = new Transaction(
-            portefeuille.getId(),
-            "BONUS",
-            montant,
-            ancienSolde,
-            nouveauSolde
-        );
-        transaction.setReference("BONUS-" + UUID.randomUUID().toString());
-        transaction.setDescription("Bonus : " + typeBonus + (codePromo != null ? " (" + codePromo + ")" : ""));
-
-        // Sauvegarder la transaction
-        transaction = transactionRepository.save(transaction);
-
-        // Mettre à jour le portefeuille
-        portefeuille.setSoldeBonus(nouveauSolde);
         portefeuille.setDateModification(LocalDateTime.now());
+
+        // Création de la transaction
+        Transaction transaction = new Transaction(
+                portefeuille.getId(),
+                categorie,
+                montant,
+                ancienSolde,
+                nouveauSolde
+        );
+        transaction.setReference(categorie + "-" + UUID.randomUUID().toString());
+        transaction.setDescription(typeBonus + (codePromo != null ? " (" + codePromo + ")" : ""));
+
+        // Sauvegardes
+        transaction = transactionRepository.save(transaction);
         portefeuilleRepository.save(portefeuille);
 
-        // Publier l'événement Kafka
+        // Kafka
         PortefeuilleBonusAjouteEvent event = new PortefeuilleBonusAjouteEvent(
-            portefeuille.getId(),
-            portefeuille.getJoueurId(),
-            portefeuille.getPseudo(),
-            montant,
-            nouveauSolde,
-            typeBonus,
-            codePromo,
-            LocalDateTime.now()
+                portefeuille.getId(), joueurId, portefeuille.getPseudo(),
+                montant, nouveauSolde, typeBonus, codePromo, LocalDateTime.now()
         );
         kafkaTemplate.send("portefeuille-bonus-ajoute", event);
 
         return transaction;
     }
 }
-
